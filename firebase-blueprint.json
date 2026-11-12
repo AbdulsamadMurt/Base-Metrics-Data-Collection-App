@@ -1,0 +1,128 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile with role-based access control and approval status.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "format": "email", "description": "User email address" },
+        "name": { "type": "string", "description": "Full name" },
+        "role": { "type": "string", "enum": ["facilitator", "supervisor", "b1_task", "admin"], "description": "User role" },
+        "approvalStatus": { "type": "string", "enum": ["pending", "approved", "rejected"], "description": "Account approval state" },
+        "accessCode": { "type": "string", "description": "Unique one-time personal activation code assigned to this user" },
+        "accessCodeUsed": { "type": "string", "description": "Access code used for registration" },
+        "approvedAt": { "type": "string", "format": "date-time", "description": "Timestamp when account was approved" },
+        "assignedProjectIds": { "type": "array", "description": "IDs of assigned projects" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Account creation date" }
+      },
+      "required": ["uid", "email", "role", "name"]
+    },
+    "Project": {
+      "title": "Project Task",
+      "description": "Data collection project campaign with custom survey questions and assigned personnel.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Project ID" },
+        "name": { "type": "string", "description": "Project title" },
+        "description": { "type": "string", "description": "Project description" },
+        "status": { "type": "string", "enum": ["active", "completed", "paused"], "description": "Campaign status" },
+        "lga": { "type": "string", "description": "Target LGA" },
+        "targetSubmissions": { "type": "integer", "description": "Target goal of submissions" },
+        "guide": { "type": "string", "description": "Enumerator and supervisor field guide" },
+        "customQuestions": { "type": "array", "description": "Custom survey questions" },
+        "assignedUserIds": { "type": "array", "description": "Assigned field personnel UIDs" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Project creation timestamp" },
+        "createdBy": { "type": "string", "description": "Admin creator" }
+      },
+      "required": ["id", "name", "status"]
+    },
+    "ClassReport": {
+      "title": "Class Report",
+      "description": "Facilitator class session report with attendance demographics and curriculum tracking.",
+      "type": "object",
+      "properties": {
+        "facilitatorId": { "type": "string", "description": "UID of the facilitator" },
+        "facilitatorName": { "type": "string", "description": "Name of the facilitator" },
+        "projectId": { "type": "string", "description": "Associated project task ID" },
+        "projectTitle": { "type": "string", "description": "Associated project task title" },
+        "lga": { "type": "string", "description": "Local Government Area" },
+        "learningCenterName": { "type": "string", "description": "Learning center name" },
+        "date": { "type": "string", "format": "date", "description": "Date of the class" },
+        "totalRegisteredLearners": { "type": "integer", "description": "Total registered learners" },
+        "attendance": { "type": "integer", "description": "Total learners present today" },
+        "boysCount": { "type": "integer", "description": "Number of boys" },
+        "girlsCount": { "type": "integer", "description": "Number of girls" },
+        "lessonNumber": { "type": "string", "description": "Lesson number" },
+        "topics": { "type": "string", "description": "Lesson taught and topics covered" },
+        "radioLessonDelivered": { "type": "boolean", "description": "Whether radio lesson was delivered" },
+        "radioLessonReasonNotDelivered": { "type": "string", "description": "Reason why radio lesson was not delivered" },
+        "lessonCompleted": { "type": "boolean", "description": "Whether lesson was completed" },
+        "workbookUsed": { "type": "boolean", "description": "Whether workbook was used" },
+        "engagementLevel": { "type": "integer", "description": "Engagement level (1-5)" },
+        "learnerUnderstanding": { "type": "string", "description": "Learner understanding description" },
+        "hasSafetyConcerns": { "type": "boolean", "description": "Any safety concerns observed" },
+        "safetyConcernsDetails": { "type": "string", "description": "Details of safety concerns" },
+        "photoUrl": { "type": "string", "description": "Optimized base64 photo of learners/classroom" },
+        "customAnswers": { "type": "object", "description": "Answers to custom project questions" },
+        "notes": { "type": "string", "description": "Additional notes" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Submission timestamp" }
+      },
+      "required": ["facilitatorId", "date", "lga", "learningCenterName", "topics", "attendance"]
+    },
+    "VisitReport": {
+      "title": "Visit Report",
+      "description": "Supervisor facility visit report with GPS, classroom observation and quality assessment.",
+      "type": "object",
+      "properties": {
+        "supervisorId": { "type": "string", "description": "UID of the supervisor" },
+        "supervisorName": { "type": "string", "description": "Name of the supervisor" },
+        "facilitatorId": { "type": "string", "description": "UID of the facilitator visited" },
+        "facilitatorName": { "type": "string", "description": "Name of the facilitator visited" },
+        "projectId": { "type": "string", "description": "Associated project task ID" },
+        "projectTitle": { "type": "string", "description": "Associated project task title" },
+        "lga": { "type": "string", "description": "Local Government Area" },
+        "learningCenterName": { "type": "string", "description": "Learning center name" },
+        "date": { "type": "string", "format": "date", "description": "Date of the visit" },
+        "time": { "type": "string", "description": "Time of the visit" },
+        "gpsLocation": {
+          "type": "object",
+          "description": "GPS coordinates of the learning center",
+          "properties": {
+            "latitude": { "type": "number", "description": "Latitude coordinate" },
+            "longitude": { "type": "number", "description": "Longitude coordinate" },
+            "accuracy": { "type": "number", "description": "Accuracy radius in meters" }
+          }
+        },
+        "totalRegisteredLearners": { "type": "integer", "description": "Total registered learners" },
+        "attendance": { "type": "integer", "description": "Total learners present today" },
+        "boysCount": { "type": "integer", "description": "Number of boys" },
+        "girlsCount": { "type": "integer", "description": "Number of girls" },
+        "lessonNumber": { "type": "string", "description": "Lesson number" },
+        "topics": { "type": "string", "description": "Lesson taught" },
+        "radioLessonDelivered": { "type": "boolean", "description": "Whether radio lesson was delivered" },
+        "radioLessonReasonNotDelivered": { "type": "string", "description": "Reason why radio lesson was not delivered" },
+        "lessonCompleted": { "type": "boolean", "description": "Whether lesson was completed" },
+        "workbookUsed": { "type": "boolean", "description": "Whether workbook was used" },
+        "learnerUnderstanding": { "type": "string", "description": "Supervisor rating of learner comprehension" },
+        "hasSafetyConcerns": { "type": "boolean", "description": "Whether safety concerns exist" },
+        "safetyConcernsDetails": { "type": "string", "description": "Details of safety concerns" },
+        "classroomCondition": { "type": "string", "description": "Condition of the classroom" },
+        "resourcesAvailable": { "type": "boolean", "description": "Whether resources are available" },
+        "recommendations": { "type": "string", "description": "Supervisor recommendations" },
+        "photoUrl": { "type": "string", "description": "Optimized base64 photo of students/classroom" },
+        "customAnswers": { "type": "object", "description": "Answers to custom project questions" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Submission timestamp" }
+      },
+      "required": ["supervisorId", "facilitatorName", "date", "lga", "learningCenterName", "classroomCondition"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": { "schema": "User", "description": "User profiles" },
+    "/projects/{projectId}": { "schema": "Project", "description": "Data collection project campaigns" },
+    "/reports/{reportId}": { "schema": "ClassReport", "description": "Facilitator class reports" },
+    "/visits/{visitId}": { "schema": "VisitReport", "description": "Supervisor visit reports" },
+    "/task_submissions/{submissionId}": { "description": "B1 Task field data submissions for various sectors" },
+    "/hire_inquiries/{inquiryId}": { "description": "Client and partner requests to hire data collection team" }
+  }
+}

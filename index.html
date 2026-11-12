@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Suppress Vite HMR WebSocket errors in proxy/iframe environment
+      window.addEventListener('error', function (e) {
+        var msg = (e && e.message ? e.message : '') + '';
+        if (msg.includes('WebSocket') || msg.includes('[vite]')) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          return true;
+        }
+      }, true);
+      window.addEventListener('unhandledrejection', function (e) {
+        var msg = (e && e.reason && (e.reason.message || e.reason)) + '';
+        if (msg.includes('WebSocket') || msg.includes('[vite]')) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+        }
+      }, true);
+    </script>
+    <title>Base Metrics - Multi-Sector Field Data Collection &amp; Monitoring</title>
+    <meta name="description" content="Base Metrics is a multi-sector field data collection, verification, and monitoring platform for NGOs, researchers, and enterprises, replacing traditional KoboCollect and paper forms." />
+    <meta property="og:title" content="Base Metrics - Multi-Sector Field Data Collection &amp; Monitoring" />
+    <meta property="og:description" content="Base Metrics is a multi-sector field data collection, verification, and monitoring platform for NGOs, researchers, and enterprises, replacing traditional KoboCollect and paper forms." />
+    <link rel="icon" type="image/jpeg" href="/logo.jpeg" />
+    <link rel="apple-touch-icon" href="/logo.jpeg" />
+    <meta name="theme-color" content="#0d1117" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Base Metrics" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

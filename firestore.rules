@@ -1,0 +1,104 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function hasRole(role) {
+      return isAuthenticated() && getUserData().role == role;
+    }
+    
+    function isAdmin() {
+      return (isAuthenticated() && getUserData().role == 'admin') || 
+             (isAuthenticated() && request.auth.token.email == "murtalaabdulsamad142@gmail.com" && request.auth.token.email_verified == true);
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'name', 'role']) &&
+             data.uid is string &&
+             data.email is string &&
+             data.name is string &&
+             data.name.size() > 0 && data.name.size() < 100 &&
+             data.role in ['facilitator', 'supervisor', 'b1_task', 'admin'];
+    }
+
+    function isValidProject(data) {
+      return data.id is string &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
+             data.status in ['active', 'completed', 'paused'];
+    }
+
+    function isValidReport(data) {
+      return data.facilitatorId is string &&
+             data.facilitatorId == request.auth.uid &&
+             data.date is string &&
+             data.topics is string && data.topics.size() > 0 && data.topics.size() < 2000;
+    }
+
+    function isValidVisit(data) {
+      return data.supervisorId is string &&
+             data.supervisorId == request.auth.uid &&
+             data.facilitatorName is string &&
+             data.date is string &&
+             data.classroomCondition is string && data.classroomCondition.size() > 0;
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin());
+    }
+
+    match /projects/{projectId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && isAdmin();
+    }
+
+    match /reports/{reportId} {
+      allow read: if isAuthenticated() && (
+        (hasRole('facilitator') && resource.data.facilitatorId == request.auth.uid) || 
+        hasRole('supervisor') || 
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && (hasRole('facilitator') || isAdmin()) && isValidReport(request.resource.data);
+      allow update, delete: if isAdmin();
+    }
+
+    match /visits/{visitId} {
+      allow read: if isAuthenticated() && (
+        (hasRole('supervisor') && resource.data.supervisorId == request.auth.uid) || 
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && (hasRole('supervisor') || isAdmin()) && isValidVisit(request.resource.data);
+      allow update, delete: if isAdmin();
+    }
+
+    match /task_submissions/{submissionId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    match /hire_inquiries/{inquiryId} {
+      allow read: if isAuthenticated() && isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+  }
+}

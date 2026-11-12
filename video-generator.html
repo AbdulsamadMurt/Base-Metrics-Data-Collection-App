@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Base Metrics - Video Generator & Exporter</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #090d13;
+      color: #c9d1d9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+      max-width: 800px;
+    }
+    h1 {
+      color: #f0f6fc;
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    p.subtitle {
+      color: #8b949e;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      background: rgba(46, 160, 67, 0.15);
+      border: 1px solid rgba(46, 160, 67, 0.4);
+      color: #2ea043;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+    .video-container {
+      position: relative;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      width: 100%;
+      max-width: 960px;
+      aspect-ratio: 16 / 9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .controls-panel {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      align-items: center;
+      max-width: 960px;
+      width: 100%;
+      background: #161b22;
+      border: 1px solid #30363d;
+      padding: 16px 20px;
+      border-radius: 14px;
+    }
+    button {
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      border-radius: 10px;
+      padding: 10px 18px;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: none;
+    }
+    .btn-record {
+      background: #238636;
+      color: #ffffff;
+      border: 1px solid #2ea043;
+    }
+    .btn-record:hover {
+      background: #2ea043;
+      transform: translateY(-1px);
+    }
+    .btn-preview {
+      background: #21262d;
+      color: #f0f6fc;
+      border: 1px solid #30363d;
+    }
+    .btn-preview:hover {
+      background: #30363d;
+    }
+    .btn-download {
+      background: #58a6ff;
+      color: #0d1117;
+      border: 1px solid #79c0ff;
+      font-weight: 700;
+    }
+    .btn-download:hover {
+      background: #79c0ff;
+    }
+    .btn-download:disabled, .btn-record:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .status-text {
+      font-size: 12px;
+      color: #8b949e;
+      font-family: monospace;
+      margin-left: auto;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #2ea043;
+    }
+    .recording-dot {
+      width: 10px;
+      height: 10px;
+      background: #f85149;
+      border-radius: 50%;
+      animation: pulse 1s infinite;
+      display: none;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.85); }
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      max-width: 960px;
+      width: 100%;
+      margin-top: 24px;
+    }
+    .info-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .info-card h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #f0f6fc;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .info-card p {
+      font-size: 12px;
+      color: #8b949e;
+      line-height: 1.5;
+    }
+    .tag {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #21262d;
+      color: #58a6ff;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="badge">Standalone Promotional Video Tool</div>
+    <h1>Base Metrics — App Walkthrough & Ad Video Exporter</h1>
+    <p class="subtitle">
+      Generates an official 1080p promotional video explaining each component of Base Metrics separately: Multi-Sector Coverage, Facilitator Offline Mode, Supervisor GPS & Photos, B1 Custom Tasks, and Admin CSV Analytics.
+    </p>
+  </header>
+
+  <div class="video-container">
+    <canvas id="promoCanvas" width="1920" height="1080"></canvas>
+  </div>
+
+  <div class="controls-panel">
+    <button id="btnRecord" class="btn-record">
+      <span class="recording-dot" id="recDot"></span>
+      <span id="recText">🎬 Record & Generate Video (60s)</span>
+    </button>
+    
+    <button id="btnPreview" class="btn-preview">
+      ▶ Live Preview Animation
+    </button>
+
+    <button id="btnDownload" class="btn-download" disabled>
+      ⬇ Download Video (.webm)
+    </button>
+
+    <div class="status-text" id="statusText">Status: Ready to render</div>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <h3><span class="tag">Scene 1</span> Platform Vision & Sectors</h3>
+      <p>Introduces Base Metrics as the universal field engine replacing paper forms for Education, Health, Agriculture, WASH, and Humanitarian programs.</p>
+    </div>
+    <div class="info-card">
+      <h3><span class="tag">Scene 2</span> Facilitator Portal & Offline Outbox</h3>
+      <p>Demonstrates data collection in remote areas without internet, local draft caching, and instant auto-sync once connectivity returns.</p>
+    </div>
+    <div class="info-card">
+      <h3><span class="tag">Scene 3</span> Supervisor On-Site Audit</h3>
+      <p>Explains quality assurance with locked GPS coordinates (latitude/longitude accuracy) and live photographic verification.</p>
+    </div>
+    <div class="info-card">
+      <h3><span class="tag">Scene 4</span> B1 Task Engine & Custom Forms</h3>
+      <p>Covers commissioning custom question sets for any organization and downloading instant project-filtered CSV datasets.</p>
+    </div>
+    <div class="info-card">
+      <h3><span class="tag">Scene 5</span> Admin Command Center</h3>
+      <p>Highlights individual one-time access codes, strict vetting, live dashboard charts, and enterprise-grade data security.</p>
+    </div>
+    <div class="info-card">
+      <h3><span class="tag">Scene 6</span> Mobilization & CTA</h3>
+      <p>Displays PWA QR barcode installation, Google Auth integration, and contact details for instant team deployment.</p>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('promoCanvas');
+    const ctx = canvas.getContext('2d');
+    const btnRecord = document.getElementById('btnRecord');
+    const btnPreview = document.getElementById('btnPreview');
+    const btnDownload = document.getElementById('btnDownload');
+    const statusText = document.getElementById('statusText');
+    const recDot = document.getElementById('recDot');
+    const recText = document.getElementById('recText');
+
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let recordedBlob = null;
+    let isRecording = false;
+    let animationId = null;
+    let startTime = 0;
+    const TOTAL_DURATION_SEC = 54; // 9 seconds per scene (6 scenes)
+
+    const scenes = [
+      {
+        part: "PART 1: THE UNIVERSAL ENGINE",
+        title: "Base Metrics",
+        headline: "Replace Paper Forms & KoboCollect In Any Sector",
+        points: [
+          "✓ Multi-Sector: Education, Healthcare, Agriculture, WASH & Humanitarian Relief",
+          "✓ Real-time cloud synchronization on Google Cloud Platform",
+          "✓ Clean, unified dark theme built for field visibility"
+        ],
+        iconText: "🌐",
+        accent: "#2ea043"
+      },
+      {
+        part: "PART 2: FACILITATOR & ENUMERATOR PORTAL",
+        title: "Offline-First Data Collection",
+        headline: "Seamless Data Entry Even With Zero Network Signal",
+        points: [
+          "✓ Local Outbox: Form drafts & records are preserved if connection drops",
+          "✓ Automated Cloud Sync the moment internet connectivity restores",
+          "✓ Disaggregated attendance (boys/girls) and comprehension scoring"
+        ],
+        iconText: "📶",
+        accent: "#58a6ff"
+      },
+      {
+        part: "PART 3: FIELD SUPERVISOR VERIFICATION",
+        title: "Quality Assurance & Proof of Presence",
+        headline: "Tamper-Proof On-Site Audits and GPS Verification",
+        points: [
+          "✓ High-precision GPS location lock (latitude, longitude, horizontal accuracy)",
+          "✓ Real-time camera photographic capture of learning center activities",
+          "✓ Radio education broadcasts and lesson delivery verification"
+        ],
+        iconText: "📍",
+        accent: "#2ea043"
+      },
+      {
+        part: "PART 4: B1 TASK ENGINE",
+        title: "Custom Questionnaires for Any Client",
+        headline: "Deploy Dynamic Surveys Tailored to Any Project",
+        points: [
+          "✓ Build text, numeric, single-choice, and boolean fields on demand",
+          "✓ Organizations can commission custom data tasks (Hire Us Workflow)",
+          "✓ Dynamic questions populate instantly on the collector's screen"
+        ],
+        iconText: "⚡",
+        accent: "#bc8cff"
+      },
+      {
+        part: "PART 5: ADMIN COMMAND CENTER",
+        title: "Live Monitoring & 1-Click CSV Exports",
+        headline: "Centralized Governance, Role Approval & Data Extraction",
+        points: [
+          "✓ Unique one-time access codes for each registered enumerator/supervisor",
+          "✓ Master password gate protecting sensitive operational data",
+          "✓ Instant 1-Click CSV exports ready for Excel, SPSS, and Stata analysis"
+        ],
+        iconText: "🛡️",
+        accent: "#f0883e"
+      },
+      {
+        part: "PART 6: DEPLOY IN SECONDS",
+        title: "Install On Any Phone & Get Started",
+        headline: "Progressive Web App with QR Code Installation",
+        points: [
+          "✓ Scan mobile QR barcode to install natively on Android & iOS",
+          "✓ Google OAuth & Limited Use compliance for verified identity",
+          "✓ Contact: murtalaabdulsamad142@gmail.com"
+        ],
+        iconText: "📱",
+        accent: "#2ea043"
+      }
+    ];
+
+    function drawScene(elapsed) {
+      const w = canvas.width;
+      const h = canvas.height;
+      const sceneIndex = Math.min(Math.floor(elapsed / 9), scenes.length - 1);
+      const scene = scenes[sceneIndex];
+      const sceneElapsed = elapsed % 9;
+
+      // Smooth fade transition
+      let alpha = 1;
+      if (sceneElapsed < 0.6) alpha = sceneElapsed / 0.6;
+      else if (sceneElapsed > 8.4) alpha = (9 - sceneElapsed) / 0.6;
+
+      // Dark background with subtle gradient
+      ctx.fillStyle = "#090d13";
+      ctx.fillRect(0, 0, w, h);
+
+      // Gradient accent glow in top right
+      const grad = ctx.createRadialGradient(w * 0.85, h * 0.25, 50, w * 0.85, h * 0.25, 700);
+      grad.addColorStop(0, scene.accent + "25");
+      grad.addColorStop(1, "rgba(9, 13, 19, 0)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+
+      // Subtle tech grid pattern
+      ctx.strokeStyle = "rgba(48, 54, 61, 0.25)";
+      ctx.lineWidth = 1;
+      for (let x = 0; x < w; x += 120) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+      }
+      for (let y = 0; y < h; y += 120) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+      }
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+
+      // Top Header Brand Bar
+      ctx.fillStyle = "#161b22";
+      ctx.fillRect(80, 60, w - 160, 80);
+      ctx.strokeStyle = "#30363d";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(80, 60, w - 160, 80);
+
+      // Logo & Brand Name
+      ctx.fillStyle = "#2ea043";
+      ctx.font = "bold 32px sans-serif";
+      ctx.fillText("Base Metrics", 120, 112);
+
+      ctx.fillStyle = "#8b949e";
+      ctx.font = "600 20px sans-serif";
+      ctx.fillText("|  Universal Multi-Sector Field Platform", 325, 110);
+
+      // Live timestamp / status
+      ctx.fillStyle = scene.accent;
+      ctx.font = "bold 20px monospace";
+      ctx.textAlign = "right";
+      ctx.fillText(scene.part, w - 120, 110);
+      ctx.textAlign = "left";
+
+      // Main Card Presentation Area
+      const cardX = 80;
+      const cardY = 180;
+      const cardW = w - 160;
+      const cardH = h - 280;
+
+      ctx.fillStyle = "#161b22";
+      ctx.fillRect(cardX, cardY, cardW, cardH);
+      ctx.strokeStyle = scene.accent + "66";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(cardX, cardY, cardW, cardH);
+
+      // Icon Circle
+      ctx.fillStyle = scene.accent + "22";
+      ctx.beginPath();
+      ctx.arc(cardX + 110, cardY + 130, 65, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = scene.accent;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.font = "56px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(scene.iconText, cardX + 110, cardY + 150);
+      ctx.textAlign = "left";
+
+      // Title & Headline
+      ctx.fillStyle = scene.accent;
+      ctx.font = "bold 26px monospace";
+      ctx.fillText(scene.part, cardX + 210, cardY + 110);
+
+      ctx.fillStyle = "#f0f6fc";
+      ctx.font = "bold 64px sans-serif";
+      ctx.fillText(scene.title, cardX + 210, cardY + 175);
+
+      ctx.fillStyle = "#8b949e";
+      ctx.font = "500 30px sans-serif";
+      ctx.fillText(scene.headline, cardX + 210, cardY + 230);
+
+      // Divider line
+      ctx.strokeStyle = "#30363d";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(cardX + 60, cardY + 280);
+      ctx.lineTo(cardX + cardW - 60, cardY + 280);
+      ctx.stroke();
+
+      // Feature bullet points
+      ctx.font = "600 32px sans-serif";
+      ctx.fillStyle = "#c9d1d9";
+      let startY = cardY + 360;
+      scene.points.forEach((point) => {
+        // Highlight checkmark
+        ctx.fillStyle = "#2ea043";
+        ctx.fillText("✔", cardX + 80, startY);
+        ctx.fillStyle = "#f0f6fc";
+        ctx.fillText(point.replace("✓ ", ""), cardX + 130, startY);
+        startY += 85;
+      });
+
+      // Bottom Progress Bar
+      const progress = Math.min(elapsed / TOTAL_DURATION_SEC, 1);
+      ctx.fillStyle = "#21262d";
+      ctx.fillRect(80, h - 70, w - 160, 16);
+
+      ctx.fillStyle = scene.accent;
+      ctx.fillRect(80, h - 70, (w - 160) * progress, 16);
+
+      // Time indicator
+      ctx.fillStyle = "#8b949e";
+      ctx.font = "600 20px monospace";
+      ctx.fillText(`Scene ${sceneIndex + 1} of ${scenes.length}  •  ${Math.floor(elapsed)}s / ${TOTAL_DURATION_SEC}s`, 80, h - 30);
+
+      ctx.textAlign = "right";
+      ctx.fillText("Engineered for NGOs, Governments & Enterprise Field Operations", w - 80, h - 30);
+      ctx.textAlign = "left";
+
+      ctx.restore();
+    }
+
+    // Initial render
+    drawScene(0);
+
+    function startAnimation(onComplete) {
+      startTime = performance.now();
+      function render(now) {
+        const elapsed = (now - startTime) / 1000;
+        if (elapsed < TOTAL_DURATION_SEC) {
+          drawScene(elapsed);
+          animationId = requestAnimationFrame(render);
+        } else {
+          drawScene(TOTAL_DURATION_SEC);
+          if (onComplete) onComplete();
+        }
+      }
+      animationId = requestAnimationFrame(render);
+    }
+
+    btnPreview.addEventListener('click', () => {
+      if (isRecording) return;
+      if (animationId) cancelAnimationFrame(animationId);
+      statusText.textContent = "Status: Playing live preview...";
+      startAnimation(() => {
+        statusText.textContent = "Status: Preview completed";
+      });
+    });
+
+    btnRecord.addEventListener('click', async () => {
+      if (isRecording) return;
+      isRecording = true;
+      recordedChunks = [];
+      btnRecord.disabled = true;
+      btnPreview.disabled = true;
+      btnDownload.disabled = true;
+      recDot.style.display = 'inline-block';
+      recText.textContent = "Recording Video (In Progress)...";
+      statusText.textContent = "Status: Capturing 1080p stream at 30 FPS...";
+
+      // Setup audio synth tone / background hum
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const dest = audioCtx.createMediaStreamDestination();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.01, audioCtx.currentTime); // gentle ambient hum
+      osc.connect(gain);
+      gain.connect(dest);
+      osc.start();
+
+      // Combine canvas video stream + audio stream
+      const canvasStream = canvas.captureStream(30); // 30 FPS
+      const combinedTracks = [...canvasStream.getVideoTracks(), ...dest.stream.getAudioTracks()];
+      const combinedStream = new MediaStream(combinedTracks);
+
+      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
+        ? 'video/webm;codecs=vp9,opus'
+        : 'video/webm';
+
+      mediaRecorder = new MediaRecorder(combinedStream, {
+        mimeType: mimeType,
+        videoBitsPerSecond: 6000000 // 6 Mbps high quality
+      });
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          recordedChunks.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        osc.stop();
+        audioCtx.close();
+        recordedBlob = new Blob(recordedChunks, { type: 'video/webm' });
+        btnDownload.disabled = false;
+        btnRecord.disabled = false;
+        btnPreview.disabled = false;
+        recDot.style.display = 'none';
+        recText.textContent = "🎬 Re-Record Video (60s)";
+        statusText.innerHTML = `<span class="status-badge">✔ Video ready! Size: ${(recordedBlob.size / 1024 / 1024).toFixed(2)} MB</span>`;
+        isRecording = false;
+
+        // Auto-trigger download
+        triggerDownload();
+      };
+
+      mediaRecorder.start(1000); // chunk every 1s
+
+      startAnimation(() => {
+        mediaRecorder.stop();
+      });
+    });
+
+    function triggerDownload() {
+      if (!recordedBlob) return;
+      const url = URL.createObjectURL(recordedBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = "BaseMetrics_Complete_App_Walkthrough.webm";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    }
+
+    btnDownload.addEventListener('click', triggerDownload);
+  </script>
+</body>
+</html>
